@@ -83,5 +83,16 @@ func TestUpdateTodo(t *testing.T) {
 }
 
 func TestDeleteTodo(t *testing.T) {
+	e := echo.New()
+	database.Connect()
+	sqlDB, _ := database.DB.DB()
+	defer sqlDB.Close()
 
+	e.DELETE("/todos/:id", DeleteTodo)
+
+	req, _ := http.NewRequest(http.MethodDelete, "/todos/3", nil)
+	w := httptest.NewRecorder()
+	e.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNoContent, w.Code)
 }
