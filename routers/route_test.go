@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"go/todo3/database"
+	"go/todo3/utils"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/labstack/echo"
@@ -45,13 +47,18 @@ func TestCreateTodo(t *testing.T) {
 		Detail: "test",
 	}
 	jsonParam, _ := json.Marshal(param)
-	expected := `{"id":4,"title":"test","detail":"test"}
-`
 
 	req, _ := http.NewRequest(http.MethodPost, "/todos", bytes.NewBuffer(jsonParam))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	w := httptest.NewRecorder()
 	e.ServeHTTP(w, req)
+
+	todos := []Todo{}
+	database.DB.Last(&todos)
+	jsonData, _ := json.Marshal(todos)
+	str := string(jsonData) + "\n"
+	replacedStr := strings.Replace(str, "[", "", 1)
+	expected := utils.Reverse(strings.Replace(utils.Reverse(replacedStr), "]", "", 1))
 
 	assert.Equal(t, http.StatusCreated, w.Code)
 	assert.Equal(t, expected, w.Body.String())
