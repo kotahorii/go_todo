@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TODO: Createで新しいデータを作って最後のデータと一致するか確認
 func TestGetTodos(t *testing.T) {
 	e := echo.New()
 	database.Connect()
@@ -82,7 +81,7 @@ func TestUpdateTodo(t *testing.T) {
 	e.PUT("/todos/:id", UpdateTodo)
 
 	param := Todo{
-		Id:     999,
+		Id:     2147483647,
 		Title:  "test",
 		Detail: "test",
 	}
@@ -97,7 +96,7 @@ func TestUpdateTodo(t *testing.T) {
 	}
 	jsonParam, _ = json.Marshal(param)
 
-	req, _ := http.NewRequest(http.MethodPut, "/todos/999", bytes.NewBuffer(jsonParam))
+	req, _ := http.NewRequest(http.MethodPut, "/todos/2147483647", bytes.NewBuffer(jsonParam))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	w := httptest.NewRecorder()
 	e.ServeHTTP(w, req)
@@ -118,8 +117,20 @@ func TestDeleteTodo(t *testing.T) {
 	defer sqlDB.Close()
 
 	e.DELETE("/todos/:id", DeleteTodo)
+	e.POST("/todos", CreateTodo)
 
-	req, _ := http.NewRequest(http.MethodDelete, "/todos/3", nil)
+	param := Todo{
+		Id:     2147483647,
+		Title:  "test",
+		Detail: "test",
+	}
+
+	jsonParam, _ := json.Marshal(param)
+
+	postReq, _ := http.NewRequest(http.MethodPost, "/todos", bytes.NewBuffer(jsonParam))
+	postReq.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+
+	req, _ := http.NewRequest(http.MethodDelete, "/todos/2147483647", nil)
 	w := httptest.NewRecorder()
 	e.ServeHTTP(w, req)
 
