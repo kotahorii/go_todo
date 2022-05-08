@@ -3,16 +3,14 @@ package routers
 import (
 	"go/todo3/database"
 	"net/http"
-	"time"
 
 	"github.com/labstack/echo"
 )
 
 type Todo struct {
-	Id       int    `json:"id" param:"id"`
-	Title    string `json:"title"`
-	Detail   string `json:"detail"`
-	CreatedAt time.Time `json:"created_at"`
+	Id     int    `json:"id" param:"id"`
+	Title  string `json:"title"`
+	Detail string `json:"detail"`
 }
 
 func GetTodos(c echo.Context) error {
