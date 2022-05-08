@@ -4,10 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"go/todo3/database"
-	"go/todo3/utils"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/labstack/echo"
@@ -21,10 +19,22 @@ func TestGetTodos(t *testing.T) {
 	sqlDB, _ := database.DB.DB()
 	defer sqlDB.Close()
 
+	e.POST("/todos", CreateTodo)
 	e.GET("/todos", GetTodos)
 
-	const expected = `[{"id":1,"title":"test","detail":"test"}]
-`
+	param := Todo{
+		Title:  "test",
+		Detail: "test",
+	}
+	jsonParam, _ := json.Marshal(param)
+
+	postReq, _ := http.NewRequest(http.MethodPost, "/todos", bytes.NewBuffer(jsonParam))
+	postReq.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+
+	todos := []Todo{}
+	database.DB.Find(&todos)
+	jsonData, _ := json.Marshal(todos)
+	expected := string(jsonData) + "\n"
 
 	req, _ := http.NewRequest(http.MethodGet, "/todos", nil)
 	w := httptest.NewRecorder()
@@ -53,12 +63,10 @@ func TestCreateTodo(t *testing.T) {
 	w := httptest.NewRecorder()
 	e.ServeHTTP(w, req)
 
-	todos := []Todo{}
-	database.DB.Last(&todos)
-	jsonData, _ := json.Marshal(todos)
-	str := string(jsonData) + "\n"
-	replacedStr := strings.Replace(str, "[", "", 1)
-	expected := utils.Reverse(strings.Replace(utils.Reverse(replacedStr), "]", "", 1))
+	todo := Todo{}
+	database.DB.Last(&todo)
+	jsonData, _ := json.Marshal(todo)
+	expected := string(jsonData) + "\n"
 
 	assert.Equal(t, http.StatusCreated, w.Code)
 	assert.Equal(t, expected, w.Body.String())
@@ -70,20 +78,34 @@ func TestUpdateTodo(t *testing.T) {
 	sqlDB, _ := database.DB.DB()
 	defer sqlDB.Close()
 
+	e.POST("/todos", CreateTodo)
 	e.PUT("/todos/:id", UpdateTodo)
 
 	param := Todo{
+		Id:     999,
 		Title:  "test",
 		Detail: "test",
 	}
 	jsonParam, _ := json.Marshal(param)
-	expected := `{"id":1,"title":"test","detail":"test"}
-`
 
-	req, _ := http.NewRequest(http.MethodPut, "/todos/1", bytes.NewBuffer(jsonParam))
+	postReq, _ := http.NewRequest(http.MethodPost, "/todos", bytes.NewBuffer(jsonParam))
+	postReq.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+
+	param = Todo{
+		Title:  "test update",
+		Detail: "test update",
+	}
+	jsonParam, _ = json.Marshal(param)
+
+	req, _ := http.NewRequest(http.MethodPut, "/todos/999", bytes.NewBuffer(jsonParam))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	w := httptest.NewRecorder()
 	e.ServeHTTP(w, req)
+
+	todo := Todo{}
+	database.DB.Last(&todo)
+	jsonData, _ := json.Marshal(todo)
+	expected := string(jsonData) + "\n"
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, expected, w.Body.String())
